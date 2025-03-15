@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model StandardMaterial {
+  id           Int     @id @default(autoincrement())  // A unique identifier for each entry
+  material     String  // Material name (e.g., 25 mm o/d Pipe)
+  rate         Float   // Rate in PKR/sqft
+  quantity     Float   // Quantity required per square foot (units/sqft)
+}
+
+model QualityMaterial {
+  id       Int     @id @default(autoincrement())  // A unique identifier for each entry
+  material String  // Material name (e.g., Cement, Bricks)
+  quality  String  // Quality level (High, Medium, Low)
+  rate     Float   // Rate for the given quality level
+}
+
+model QualityMaterialQuantity {
+  id           Int     @id @default(autoincrement())  // A unique identifier for each entry
+  material     String  // Material name (e.g., Bricks, Cement)
+  quantity     Float   // Quantity required per square foot (units/sqft)
+}
+
+model ElectricalCost {
+  id             Int     @id @default(autoincrement())  // A unique identifier for each entry
+  item           String  // Item name (e.g., Switch Boards, Electrical PVC Conduit)
+  quality        String  // Quality level (High, Medium, Low)
+  rate           Float   // Rate for the given quality level
+}
+
+// Define the enum for user roles
+enum Role {
+  USER
+  ADMIN
+}
+
+// User model
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(USER)
+  
+  searches    UserSearch[]    // Relation with UserSearch
+  reviews     SocietyReview[] // Relation with SocietyReview
+  Userreviews Review[] // Relation with Review
+}
+
+model Society {
+  id           Int       @id @default(autoincrement())
+  city         String
+  society      String
+  latitude     Float
+  longitude    Float
+  searches     UserSearch[]    // Relation with UserSearch
+  reviews      SocietyReview[] // Relation with SocietyReview
+
+  @@unique([city, society])
+}
+
+model UserSearch {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  userName     String   // New field for user's name
+  societyId    Int
+  societyName  String   // New field for society's name
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id])
+  society      Society  @relation(fields: [societyId], references: [id])
+
+  @@index([userId])
+  @@index([societyId])
+}
+
+model SocietyReview {
+  id           Int       @id @default(autoincrement())
+  societyId    Int
+  userId       Int
+  rating       Int       // Rating from 1-5
+  comment      String?   // Optional comment from the user
+  createdAt    DateTime  @default(now())
+  
+  // Relations
+  user         User      @relation(fields: [userId], references: [id])
+  society      Society   @relation(fields: [societyId], references: [id])
+
+  @@index([societyId])
+  @@index([userId])
+}
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id]) // Relation to the User model
+  
+  @@index([userId])
+}
